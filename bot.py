@@ -15,6 +15,7 @@
 import discord
 from discord import app_commands
 import aiohttp
+import io
 import os
 import sys
 
@@ -27,6 +28,13 @@ intents = discord.Intents.default()
 client  = discord.Client(intents=intents)
 tree    = app_commands.CommandTree(client)
 
+async def fetch_image(url: str) -> discord.File:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            data = await resp.read()
+            ext  = url.split(".")[-1].split("?")[0]
+            return discord.File(io.BytesIO(data), filename=f"image.{ext}")
+
 @tree.command(name="pfp", description=".")
 @app_commands.describe(id="id")
 async def pfp(interaction: discord.Interaction, id: str):
@@ -34,8 +42,8 @@ async def pfp(interaction: discord.Interaction, id: str):
     try:
         user = await client.fetch_user(int(id))
         av   = user.avatar or user.default_avatar
-        embed = discord.Embed(color=0x000000).set_image(url=av.with_size(SIZE).url)
-        await interaction.followup.send(embed=embed)
+        file = await fetch_image(av.with_size(SIZE).url)
+        await interaction.followup.send(file=file)
     except Exception:
         await interaction.followup.send("user not found", ephemeral=True)
 
@@ -51,10 +59,10 @@ async def banner(interaction: discord.Interaction, id: str):
         if not banner_hash:
             await interaction.followup.send("no banner found", ephemeral=True)
             return
-        ext = "gif" if banner_hash.startswith("a_") else "png"
-        url = f"{CDN}/banners/{id}/{banner_hash}.{ext}?size={SIZE}"
-        embed = discord.Embed(color=0x000000).set_image(url=url)
-        await interaction.followup.send(embed=embed)
+        ext  = "gif" if banner_hash.startswith("a_") else "png"
+        url  = f"{CDN}/banners/{id}/{banner_hash}.{ext}?size={SIZE}"
+        file = await fetch_image(url)
+        await interaction.followup.send(file=file)
     except Exception:
         await interaction.followup.send("user not found", ephemeral=True)
 
