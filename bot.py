@@ -27,19 +27,19 @@ intents = discord.Intents.default()
 client  = discord.Client(intents=intents)
 tree    = app_commands.CommandTree(client)
 
-@tree.command(name="pfp", description="Grab the avatar of any Discord user")
-@app_commands.describe(id="Target user ID")
+@tree.command(name="pfp", description=".")
+@app_commands.describe(id="id")
 async def pfp(interaction: discord.Interaction, id: str):
     await interaction.response.defer()
     try:
         user = await client.fetch_user(int(id))
         av   = user.avatar or user.default_avatar
         await interaction.followup.send(av.with_size(SIZE).url)
-    except Exception as e:
-        await interaction.followup.send(f"❌ `{e}`", ephemeral=True)
+    except Exception:
+        await interaction.followup.send("user not found", ephemeral=True)
 
-@tree.command(name="banner", description="Grab the banner of any Discord user")
-@app_commands.describe(id="Target user ID")
+@tree.command(name="banner", description=".")
+@app_commands.describe(id="id")
 async def banner(interaction: discord.Interaction, id: str):
     await interaction.response.defer()
     try:
@@ -48,12 +48,12 @@ async def banner(interaction: discord.Interaction, id: str):
                 data = await resp.json()
         banner_hash = data.get("banner")
         if not banner_hash:
-            await interaction.followup.send("❌ `no banner found`", ephemeral=True)
+            await interaction.followup.send("no banner found", ephemeral=True)
             return
         ext = "gif" if banner_hash.startswith("a_") else "png"
         await interaction.followup.send(f"{CDN}/banners/{id}/{banner_hash}.{ext}?size={SIZE}")
-    except Exception as e:
-        await interaction.followup.send(f"❌ `{e}`", ephemeral=True)
+    except Exception:
+        await interaction.followup.send("user not found", ephemeral=True)
 
 @client.event
 async def on_ready():
